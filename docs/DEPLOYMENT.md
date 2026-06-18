@@ -1,133 +1,75 @@
 # Track Log — Deployment Guide
 
-Deploy **frontend + backend together** on Vercel using **Services** mode (one project, one URL).
+## Vercel (recommended — frontend + API in one project)
 
----
-
-## Step 1: Push latest code
-
-Make sure GitHub has the latest `vercel.json` with `experimentalServices`:
-
-https://github.com/haruki-izumo/track-log
-
----
-
-## Step 2: Import on Vercel
+### 1. Import project
 
 1. Go to [vercel.com/new](https://vercel.com/new)
-2. Click **Import** next to `haruki-izumo/track-log`
-3. On the configuration screen (your screenshot):
+2. Import `haruki-izumo/track-log`
+
+### 2. Project settings
 
 | Setting | Value |
 |---------|--------|
-| **Application Preset** | **Services** (keep this — Vercel detected frontend + backend) |
-| **Project Name** | `track-log` (or any name) |
-| **Root Directory** | `./` (repo root) |
+| **Framework Preset** | **Other** (not "Services") |
+| **Root Directory** | `./` |
+| **Build Command** | `npm run build --prefix frontend` |
+| **Output Directory** | `frontend/dist` |
+| **Install Command** | `npm install --prefix frontend` |
 
-4. Vercel should detect:
-   - **Frontend** → `frontend/` (Vite) at `/`
-   - **Backend** → `backend/` (Django) at `/api`
+Root `vercel.json` configures this automatically.
 
-5. If it says *"vercel.json required"*, click **Refresh** after the latest push — the repo now includes it.
+### 3. How routing works
+
+```
+https://your-app.vercel.app/
+├── /                 → React app (frontend/dist)
+├── /api/health       → Python serverless (api/health.py)
+└── /api/plan-trip    → Python serverless (api/plan-trip.py)
+```
+
+Trip planning logic lives in `backend/trips/` and is imported by `api/plan-trip.py`.
+Django in `backend/` is for **local development only**.
+
+### 4. Deploy
+
+Click **Deploy**. No extra environment variables required for basic operation.
+
+### 5. Verify
+
+1. `https://YOUR-URL.vercel.app/api/health` → `{"status":"ok","service":"track-log-api"}`
+2. Open the app and plan a trip (Chicago → Indianapolis → Columbus)
 
 ---
 
-## Step 3: Environment variables (recommended)
-
-In **Environment Variables**, add:
-
-| Name | Value | Notes |
-|------|--------|--------|
-| `SECRET_KEY` | *(random 50+ char string)* | Required for Django in production |
-| `DEBUG` | `False` | Production |
-| `DJANGO_API_PREFIX` | *(leave empty)* | Backend mounted at `/api` on Vercel |
-
-You do **not** need `VITE_API_URL` when using Services — frontend calls `/api` on the same domain.
-
-Generate a secret key locally:
+## Local development
 
 ```powershell
-python -c "import secrets; print(secrets.token_urlsafe(50))"
+# Terminal 1 — Django API
+.\scripts\run-backend.ps1
+
+# Terminal 2 — React UI
+.\scripts\run-frontend.ps1
 ```
 
----
-
-## Step 4: Deploy
-
-1. Click **Deploy**
-2. Wait for both services to build (frontend + backend)
-3. Open your URL: `https://track-log-xxxx.vercel.app`
-
----
-
-## Step 5: Verify it works
-
-1. **Frontend** — page loads with the Track Log UI (not 404)
-2. **Backend health** — open:
-   ```
-   https://YOUR-URL.vercel.app/api/health/
-   ```
-   Expected: `{"status":"ok","service":"track-log-api"}`
-3. **Full flow** — enter cities and click **Plan Trip & Generate Logs**
-
----
-
-## Architecture (how it works)
-
-```
-https://track-log.vercel.app/
-├── /                    → Vite React app (frontend service)
-└── /api/plan-trip       → Python API (backend/api/index.py)
-    /api/health
-```
-
-Production uses a **lightweight Python serverless handler** on Vercel (same trip logic as Django). **Django** is used for local development and optional Render deployment.
+Open http://localhost:5173
 
 ---
 
 ## Troubleshooting
 
-### Deploy button is disabled / "vercel.json required"
-- Pull latest `main` from GitHub
-- Click **Refresh** on the Vercel import screen
-- Confirm **Application Preset** = **Services**
-
-### 404 on homepage
-- Preset must be **Services**, not Vite-only
-- `vercel.json` must include `experimentalServices`
-
-### Trip planning fails (network error)
-- Check `https://YOUR-URL.vercel.app/api/health/`
-- Set `SECRET_KEY` and redeploy
-- Check Vercel → Deployments → backend build logs
-
-### Build fails on backend
-- Ensure `backend/requirements.txt` exists
-- Check Python version (3.12+)
+| Problem | Fix |
+|---------|-----|
+| 500 on `/api/plan-trip` | Redeploy latest `main`. Check Vercel function logs for `api/plan-trip.py`. |
+| 404 on `/api/health` | Framework preset must be **Other**, not Services. Root `vercel.json` must exist. |
+| Homepage 404 | `outputDirectory` must be `frontend/dist` |
+| "A server error has occurred" | Backend function crashed — check Deployments → Functions → Logs |
 
 ---
 
-## Alternative: split deployment (optional)
+## Optional: Django on Render
 
-If Services mode causes issues, deploy separately:
+For a full Django host (not required if Vercel API works):
 
-| Part | Platform | Root |
-|------|----------|------|
-| Frontend | Vercel | Set preset to **Vite**, Root Directory = `frontend` |
-| Backend | [Render](https://render.com) or Railway | `backend/` |
-
-Then set on Vercel: `VITE_API_URL=https://your-backend.onrender.com/api`
-
----
-
-## Local development (unchanged)
-
-```powershell
-# Terminal 1
-.\scripts\run-backend.ps1
-
-# Terminal 2
-.\scripts\run-frontend.ps1
-```
-
-Open http://localhost:5173
+- Deploy `backend/` to Render/Railway with `gunicorn tracklog.wsgi`
+- Set `VITE_API_URL` on Vercel to your Render API URL
