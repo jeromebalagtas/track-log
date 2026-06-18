@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { downloadLogSheetImage } from '../utils/downloadLogSheet';
+
 const STATUS_ROWS = [
   { key: 'off_duty', label: 'Off Duty' },
   { key: 'sleeper_berth', label: 'Sleeper Berth' },
@@ -38,23 +41,50 @@ function quarterFilled(seg, hour, quarter) {
 }
 
 export default function DailyLogSheet({ log, index }) {
+  const [downloading, setDownloading] = useState(false);
   const date = new Date(log.date);
   const month = date.toLocaleString('en-US', { month: 'short' });
   const day = date.getDate();
   const year = date.getFullYear();
+  const sheetId = `log-sheet-${index}`;
 
   const segmentsByStatus = STATUS_ROWS.map((row) =>
     log.segments.filter((s) => s.status === row.key),
   );
 
+  const handleDownloadImage = async () => {
+    const element = document.getElementById(sheetId);
+    if (!element) return;
+
+    setDownloading(true);
+    try {
+      const safeDate = log.date || `day-${index + 1}`;
+      await downloadLogSheetImage(element, `track-log-${safeDate}.png`);
+    } catch {
+      window.alert('Image download failed. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
-    <div className="log-sheet card">
+    <div className="log-sheet card" id={sheetId}>
       <div className="log-header">
         <h3>Driver&apos;s Daily Log (24 hours)</h3>
-        <div className="log-date">
-          <span>{month}</span>
-          <span>{day}</span>
-          <span>{year}</span>
+        <div className="log-header-actions">
+          <div className="log-date">
+            <span>{month}</span>
+            <span>{day}</span>
+            <span>{year}</span>
+          </div>
+          <button
+            type="button"
+            className="log-download-btn"
+            onClick={handleDownloadImage}
+            disabled={downloading}
+          >
+            {downloading ? 'Saving…' : 'Download as PNG'}
+          </button>
         </div>
       </div>
 

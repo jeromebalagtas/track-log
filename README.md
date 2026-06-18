@@ -75,7 +75,7 @@ See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for full step-by-step instructi
 
 ### Quick summary (Vercel Services)
 
-1. Import https://github.com/haruki-izumo/track-log on Vercel
+1. Import https://github.com/jeromebalagtas/track-log on Vercel
 2. Keep **Application Preset** = **Services**
 3. Click **Refresh** if Deploy is disabled — `vercel.json` includes `experimentalServices`
 4. Deploy and test: `https://your-app.vercel.app/api/health`

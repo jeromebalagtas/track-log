@@ -36,7 +36,7 @@ body {
 }
 
 .hero-inner {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -62,18 +62,26 @@ body {
 
 .layout {
   flex: 1;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 1.5rem;
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
   gap: 1.5rem;
   width: 100%;
+  align-items: start;
 }
 
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .layout {
+    padding: 1.5rem 2rem;
   }
 }
 
@@ -178,6 +186,15 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
 }
 
 .empty-state ul {
@@ -192,34 +209,53 @@ body {
 
 .instructions-card li {
   margin-bottom: 0.35rem;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
-.logs-section h2 {
-  margin-bottom: 1rem;
+.logs-section {
+  margin-top: 0;
+}
+
+.logs-section-title {
+  margin: 0 0 1rem;
+  font-size: 1.15rem;
 }
 
 .log-sheet {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   overflow-x: auto;
+}
+
+.log-sheet:last-child {
+  margin-bottom: 0;
 }
 
 .log-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
   margin-bottom: 1rem;
 }
 
 .log-header h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.15rem;
+}
+
+.log-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .log-date {
   display: flex;
   gap: 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
 }
 
 .log-date span {
@@ -232,22 +268,23 @@ body {
 
 .log-meta {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-  font-size: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.5rem 1rem;
+  font-size: 0.95rem;
   margin-bottom: 1rem;
 }
 
 .grid-wrapper {
   overflow-x: auto;
   margin-bottom: 1rem;
+  -webkit-overflow-scrolling: touch;
 }
 
 .hos-grid {
   border-collapse: collapse;
-  font-size: 0.65rem;
+  font-size: clamp(0.75rem, 0.7rem + 0.35vw, 0.9rem);
   width: 100%;
-  min-width: 900px;
+  min-width: 720px;
 }
 
 .hos-grid th,
@@ -270,14 +307,14 @@ body {
 }
 
 .status-label {
-  font-size: 0.7rem;
-  padding: 4px 6px;
+  font-size: clamp(0.8rem, 0.75rem + 0.25vw, 0.95rem);
+  padding: 6px 8px;
   white-space: nowrap;
 }
 
 .grid-cell {
-  width: 6px;
-  height: 18px;
+  width: clamp(6px, 0.4vw + 4px, 9px);
+  height: clamp(18px, 1vw + 14px, 24px);
 }
 
 .grid-cell.filled.status-off_duty {
@@ -299,12 +336,13 @@ body {
 .total-cell {
   text-align: center;
   font-weight: 600;
-  padding: 4px;
-  min-width: 36px;
+  padding: 6px;
+  min-width: 42px;
+  font-size: clamp(0.8rem, 0.75rem + 0.25vw, 0.95rem);
 }
 
 .remarks {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   margin-bottom: 1rem;
 }
 
@@ -315,7 +353,7 @@ body {
 }
 
 .recap {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   border-top: 1px solid var(--surface-2);
   padding-top: 0.75rem;
 }
@@ -364,27 +402,23 @@ footer {
   padding: 0.75rem !important;
 }
 
-.results-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 0.5rem;
-}
-
-.download-btn {
-  padding: 0.65rem 1rem;
-  border: 1px solid var(--accent);
+.log-download-btn {
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--accent-2);
   border-radius: 8px;
   background: transparent;
-  color: var(--accent);
+  color: var(--accent-2);
   font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
+  white-space: nowrap;
 }
 
-.download-btn:hover:not(:disabled) {
-  background: rgba(56, 189, 248, 0.12);
+.log-download-btn:hover:not(:disabled) {
+  background: rgba(129, 140, 248, 0.12);
 }
 
-.download-btn:disabled {
+.log-download-btn:disabled {
   opacity: 0.6;
   cursor: wait;
 }
@@ -392,7 +426,58 @@ footer {
 .trip-report {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .hero {
+    padding: 1.75rem 1rem;
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .tagline {
+    font-size: 0.95rem;
+  }
+
+  .map-container {
+    height: 280px;
+  }
+
+  .log-header-actions {
+    width: 100%;
+  }
+
+  .log-header-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .log-download-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .log-header h3 {
+    font-size: 1.05rem;
+  }
+
+  .hos-grid {
+    min-width: 640px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .hos-grid {
+    min-width: 100%;
+  }
+
+  .status-col {
+    width: 130px;
+  }
 }
 
 .map-legend {
@@ -457,8 +542,7 @@ footer {
   .sidebar,
   .hero,
   footer,
-  .download-btn,
-  .results-toolbar {
+  .log-download-btn {
     display: none !important;
   }
 
