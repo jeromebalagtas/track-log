@@ -71,22 +71,17 @@ curl -X POST http://127.0.0.1:8000/api/plan-trip/ \
 
 ## Deployment
 
-### Frontend (Vercel)
+See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for full step-by-step instructions.
 
-This repo includes a root `vercel.json` so Vercel builds the React app from `frontend/` automatically.
+### Quick summary (Vercel Services — recommended)
 
-1. Import https://github.com/haruki-izumo/track-log in Vercel
-2. Leave **Root Directory** empty (use repo root — `vercel.json` handles paths)
-3. Add environment variable: `VITE_API_URL` = `https://your-backend.example.com/api`
-4. Deploy
+1. Import https://github.com/haruki-izumo/track-log on Vercel
+2. Keep **Application Preset** = **Services**
+3. Add env var `SECRET_KEY` (random string) and `DEBUG=False`
+4. Click **Deploy**
+5. Test: `https://your-app.vercel.app/api/health/`
 
-If you previously set Root Directory to something else, clear it or set it to `.` so `vercel.json` is picked up.
-
-### Backend (Render / Railway)
-
-- Start command: `gunicorn tracklog.wsgi --chdir backend`
-- Set `ALLOWED_HOSTS` and `CORS_ALLOWED_ORIGINS` (include your Vercel URL)
-- Install: `pip install -r backend/requirements.txt`
+Frontend and backend deploy together on one URL (`/` + `/api/*`).
 
 ## Tech stack
 

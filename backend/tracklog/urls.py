@@ -16,8 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+import os
+
+# On Vercel Services, backend is mounted at /api (prefix stripped before Django).
+# Locally, routes are served at /api/* for the Vite dev proxy.
+API_PREFIX = os.environ.get(
+    "DJANGO_API_PREFIX",
+    "" if os.environ.get("VERCEL") else "api/",
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('trips.urls')),
+    path(API_PREFIX, include('trips.urls')),
 ]
