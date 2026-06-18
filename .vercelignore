@@ -1,0 +1,10 @@
+# Django backend is for local development only — not deployed to Vercel.
+backend/manage.py
+backend/tracklog/
+backend/trips/admin.py
+backend/trips/models.py
+backend/trips/migrations/
+backend/trips/tests.py
+backend/db.sqlite3
+backend/staticfiles/
+.tools/

@@ -73,12 +73,12 @@ curl -X POST http://127.0.0.1:8000/api/plan-trip/ \
 
 See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for full step-by-step instructions.
 
-### Quick summary (Vercel)
+### Quick summary (Vercel Services)
 
 1. Import https://github.com/haruki-izumo/track-log on Vercel
-2. Set **Framework Preset** to **Other** (not Services)
-3. Deploy — `api/health.py` and `api/plan-trip.py` serve the backend
-4. Test: `https://your-app.vercel.app/api/health`
+2. Keep **Application Preset** = **Services**
+3. Click **Refresh** if Deploy is disabled — `vercel.json` includes `experimentalServices`
+4. Deploy and test: `https://your-app.vercel.app/api/health`
 
 Frontend and backend deploy together on one URL (`/` + `/api/*`).
 

@@ -11,25 +11,21 @@
 
 | Setting | Value |
 |---------|--------|
-| **Framework Preset** | **Other** (not "Services") |
+| **Application Preset** | **Services** (Vercel auto-detects frontend + API) |
 | **Root Directory** | `./` |
-| **Build Command** | `npm run build --prefix frontend` |
-| **Output Directory** | `frontend/dist` |
-| **Install Command** | `npm install --prefix frontend` |
 
-Root `vercel.json` configures this automatically.
+Root `vercel.json` must include `experimentalServices` — this is already in the repo. Click **Refresh** on the import screen if Deploy is disabled.
 
 ### 3. How routing works
 
 ```
 https://your-app.vercel.app/
-├── /                 → React app (frontend/dist)
-├── /api/health       → Python serverless (api/health.py)
-└── /api/plan-trip    → Python serverless (api/plan-trip.py)
+├── /                 → React app (frontend/ — Vite)
+├── /api/health       → Python API (api/index.py)
+└── /api/plan-trip    → Python API (api/index.py)
 ```
 
-Trip planning logic lives in `backend/trips/` and is imported by `api/plan-trip.py`.
-Django in `backend/` is for **local development only**.
+`vercel.json` `experimentalServices` defines two services: **frontend** (Vite) and **api** (Python). The `backend/` Django project is for local dev only.
 
 ### 4. Deploy
 
@@ -61,7 +57,7 @@ Open http://localhost:5173
 | Problem | Fix |
 |---------|-----|
 | 500 on `/api/plan-trip` | Redeploy latest `main`. Check Vercel function logs for `api/plan-trip.py`. |
-| 404 on `/api/health` | Framework preset must be **Other**, not Services. Root `vercel.json` must exist. |
+| 404 on `/api/health` | Click **Refresh** on import screen; confirm `vercel.json` has `experimentalServices` |
 | Homepage 404 | `outputDirectory` must be `frontend/dist` |
 | "A server error has occurred" | Backend function crashed — check Deployments → Functions → Logs |
 
