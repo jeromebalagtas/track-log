@@ -1,0 +1,13 @@
+---
+description: Track Log FMCSA HOS full-stack assessment project conventions
+globs: ["**/*.{py,jsx,js,tsx,ts}"]
+---
+
+# Track Log conventions
+
+- Django API lives in `backend/trips/`; HOS logic only in `hos_engine.py`
+- Never hardcode HOS limits in frontend — use API response
+- Geocoding/routing in `routing.py`; respect Nominatim usage policy (User-Agent, rate limits)
+- Daily log grid uses 15-minute quarters; four duty statuses per FMCSA paper form
+- Property-carrying 70/8 assumptions unless docs updated
+- Prefer free APIs: OSRM, Nominatim, OpenStreetMap tiles
