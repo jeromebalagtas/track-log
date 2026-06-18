@@ -5,6 +5,7 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api';
 export function formatApiError(err) {
   const data = err?.response?.data;
   if (typeof data?.error === 'string') return data.error;
+  if (data?.error?.message) return data.error.message;
   if (typeof data === 'string') return data;
   if (data && typeof data === 'object') {
     try {

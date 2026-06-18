@@ -77,14 +77,11 @@ python -c "import secrets; print(secrets.token_urlsafe(50))"
 ```
 https://track-log.vercel.app/
 ├── /                    → Vite React app (frontend service)
-└── /api/plan-trip/      → Django API (backend service)
-    /api/health/
+└── /api/plan-trip       → Python API (backend/api/index.py)
+    /api/health
 ```
 
-`vercel.json` routes traffic:
-
-- `/` → `frontend/` (Vite build)
-- `/api/*` → `backend/` (Django)
+Production uses a **lightweight Python serverless handler** on Vercel (same trip logic as Django). **Django** is used for local development and optional Render deployment.
 
 ---
 
