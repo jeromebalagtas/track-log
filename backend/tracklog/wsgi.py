@@ -1,16 +1,16 @@
 """
 WSGI config for tracklog project.
-
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/6.0/howto/deployment/wsgi/
 """
-
 import os
+import sys
+
+# Ensure backend package root is on path (required for Vercel serverless).
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BACKEND_DIR not in sys.path:
+    sys.path.insert(0, BACKEND_DIR)
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tracklog.settings")
 
 from django.core.wsgi import get_wsgi_application
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tracklog.settings')
 
 application = get_wsgi_application()

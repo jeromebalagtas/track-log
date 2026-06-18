@@ -12,14 +12,17 @@ HEADERS = {"User-Agent": "TrackLog-HOS-App/1.0 (FMCSA assessment project)"}
 
 
 def geocode(address: str) -> dict:
-    resp = requests.get(
-        NOMINATIM_URL,
-        params={"q": address, "format": "json", "limit": 1, "countrycodes": "us"},
-        headers=HEADERS,
-        timeout=15,
-    )
-    resp.raise_for_status()
-    data = resp.json()
+    try:
+        resp = requests.get(
+            NOMINATIM_URL,
+            params={"q": address, "format": "json", "limit": 1, "countrycodes": "us"},
+            headers=HEADERS,
+            timeout=10,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except requests.RequestException as exc:
+        raise ValueError(f"Geocoding service unavailable for: {address} ({exc})") from exc
     if not data:
         raise ValueError(f"Could not geocode address: {address}")
     return {

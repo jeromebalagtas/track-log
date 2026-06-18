@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import TripForm from './components/TripForm';
-import RouteMap from './components/RouteMap';
 import TripResults from './components/TripResults';
-import { planTrip } from './api';
+import { formatApiError, planTrip } from './api';
 import './App.css';
+
+const RouteMap = lazy(() => import('./components/RouteMap'));
 
 export default function App() {
   const [plan, setPlan] = useState(null);
@@ -17,7 +18,7 @@ export default function App() {
       const result = await planTrip(form);
       setPlan(result);
     } catch (err) {
-      setError(err.response?.data?.error || err.message || 'Failed to plan trip');
+      setError(formatApiError(err));
       setPlan(null);
     } finally {
       setLoading(false);
@@ -39,13 +40,15 @@ export default function App() {
       <main className="layout">
         <aside className="sidebar">
           <TripForm onSubmit={handleSubmit} loading={loading} />
-          {error && <div className="error-banner">{error}</div>}
+          {error && <div className="error-banner">{String(error)}</div>}
         </aside>
 
         <section className="content">
           {plan ? (
             <>
-              <RouteMap plan={plan} />
+              <Suspense fallback={<div className="card">Loading map…</div>}>
+                <RouteMap plan={plan} />
+              </Suspense>
               <TripResults plan={plan} />
             </>
           ) : (

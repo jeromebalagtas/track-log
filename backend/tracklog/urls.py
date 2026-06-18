@@ -1,31 +1,14 @@
-"""
-URL configuration for tracklog project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
-import os
 
-# On Vercel Services, backend is mounted at /api (prefix stripped before Django).
-# Locally, routes are served at /api/* for the Vite dev proxy.
-API_PREFIX = os.environ.get(
-    "DJANGO_API_PREFIX",
-    "" if os.environ.get("VERCEL") else "api/",
-)
+urlpatterns = []
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path(API_PREFIX, include('trips.urls')),
+if not settings.IS_VERCEL:
+    urlpatterns.append(path("admin/", admin.site.urls))
+
+# Support both /api/plan-trip (local proxy) and /plan-trip (Vercel Services prefix).
+urlpatterns += [
+    path("api/", include("trips.urls")),
+    path("", include("trips.urls")),
 ]

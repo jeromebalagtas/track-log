@@ -20,7 +20,7 @@ function pin(color) {
 }
 
 export default function RouteMap({ plan }) {
-  if (!plan) return null;
+  if (!plan?.locations?.current || !plan?.locations?.dropoff) return null;
 
   const { locations, route_coordinates: route, stops, legs } = plan;
   const points = [
