@@ -13,5 +13,11 @@ if (-not (Test-Path "node_modules")) {
     npm install
 }
 
-Write-Host "Starting Vite on http://localhost:5173"
+$port = if ($args[0]) { $args[0] } else { "5173" }
+$apiPort = if ($args[1]) { $args[1] } else { "8001" }
+
+$env:VITE_PORT = $port
+$env:VITE_API_TARGET = "http://127.0.0.1:$apiPort"
+
+Write-Host "Starting Vite on http://localhost:$port (API proxy -> $env:VITE_API_TARGET)"
 npm run dev

@@ -1,14 +1,17 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const port = Number(process.env.VITE_PORT) || 5173
+const apiTarget = process.env.VITE_API_TARGET || 'http://127.0.0.1:8001'
+
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5173,
+    host: '127.0.0.1',
+    port,
     proxy: {
       '/api': {
-        // Use 8001 if port 8000 is occupied by another process
-        target: 'http://127.0.0.1:8001',
+        target: apiTarget,
         changeOrigin: true,
       },
     },
