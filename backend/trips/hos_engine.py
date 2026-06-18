@@ -263,73 +263,101 @@ class HOSEngine:
         dropoff: dict,
         route_legs: List[dict],
         total_miles: float,
+        route_coordinates: List[List[float]] | None = None,
     ) -> TripPlan:
-        """
-        route_legs: [{from, to, miles, coordinates}, ...]
-        Locations: {name, lat, lon}
-        """
+        """route_legs items include dest: 'pickup' | 'dropoff'."""
         self._log_from = current["name"]
-        self.stops.append(TripStop(current["name"], current["lat"], current["lon"], "start",
-                                   arrival=self.current_time))
+        self.stops.append(
+            TripStop(current["name"], current["lat"], current["lon"], "start", arrival=self.current_time)
+        )
 
-        all_coords = []
+        all_coords = list(route_coordinates or [])
         miles_since_fuel = 0.0
-        leg_idx = 0
+        pickup_na = pickup.get("is_na", False)
+        dropoff_na = dropoff.get("is_na", False)
 
-        # Leg 1: current -> pickup
-        leg = route_legs[leg_idx]
-        all_coords.extend(leg.get("coordinates", []))
-        drive_h = leg["miles"] / AVG_SPEED_MPH
-        self.instructions.append(f"Depart {current['name']} for pickup at {pickup['name']}")
-        self._drive_chunk(drive_h, pickup["name"], f"Driving to pickup — {pickup['name']}")
-        miles_since_fuel += leg["miles"]
+        for leg in route_legs:
+            dest_type = leg.get("dest", "dropoff")
+            dest_loc = pickup if dest_type == "pickup" else dropoff
+            dest_name = dest_loc["name"]
 
-        self.instructions.append(f"Arrive pickup: {pickup['name']} — 1h on-duty (loading)")
-        self._add_segment(DutyStatus.ON_DUTY, PICKUP_DROP_HOURS, pickup["name"],
-                          f"On duty at pickup — {pickup['name']}")
-        self.stops.append(TripStop(pickup["name"], pickup["lat"], pickup["lon"], "pickup",
-                                   arrival=self.current_time - timedelta(hours=PICKUP_DROP_HOURS),
-                                   departure=self.current_time))
+            remaining_miles = leg["miles"]
+            self.instructions.append(f"Depart toward {dest_name}")
 
-        # Leg 2: pickup -> dropoff
-        leg_idx = 1
-        leg = route_legs[leg_idx]
-        remaining_miles = leg["miles"]
-        dest = dropoff["name"]
-        coord_offset = 0
+            while remaining_miles > 0.5:
+                if miles_since_fuel >= FUEL_INTERVAL_MILES:
+                    fuel_loc = f"Fuel stop near mile {int(total_miles - remaining_miles)}"
+                    self.instructions.append(fuel_loc)
+                    self._add_segment(
+                        DutyStatus.ON_DUTY,
+                        FUEL_STOP_HOURS,
+                        fuel_loc,
+                        "Fueling (on duty, not driving)",
+                    )
+                    miles_since_fuel = 0.0
 
-        while remaining_miles > 0.5:
-            if miles_since_fuel >= FUEL_INTERVAL_MILES:
-                fuel_loc = f"Fuel stop near mile {int(total_miles - remaining_miles)}"
-                self.instructions.append(fuel_loc)
-                self._add_segment(DutyStatus.ON_DUTY, FUEL_STOP_HOURS, fuel_loc, "Fueling (on duty, not driving)")
-                miles_since_fuel = 0.0
+                chunk_miles = min(remaining_miles, self._drive_hours_available() * AVG_SPEED_MPH)
+                if chunk_miles < 1:
+                    chunk_miles = min(remaining_miles, MAX_DRIVE_HOURS * AVG_SPEED_MPH)
+                if chunk_miles < 0.5:
+                    break
 
-            chunk_miles = min(remaining_miles, self._drive_hours_available() * AVG_SPEED_MPH)
-            if chunk_miles < 1:
-                chunk_miles = min(remaining_miles, MAX_DRIVE_HOURS * AVG_SPEED_MPH)
+                drive_h = chunk_miles / AVG_SPEED_MPH
+                mid_name = dest_name if remaining_miles <= chunk_miles + 0.5 else f"En route to {dest_name}"
+                self._drive_chunk(drive_h, mid_name, f"Driving — {mid_name}")
+                miles_since_fuel += chunk_miles
+                remaining_miles -= chunk_miles
 
-            drive_h = chunk_miles / AVG_SPEED_MPH
-            mid_name = dest if remaining_miles <= chunk_miles + 0.5 else f"En route to {dest}"
-            self._drive_chunk(drive_h, mid_name, f"Driving — {mid_name}")
-            miles_since_fuel += chunk_miles
-            remaining_miles -= chunk_miles
+                if remaining_miles > 0.5 and self._drive_hours_available() < 0.1:
+                    self._finalize_day(mid_name)
+                    self._take_rest(mid_name)
 
-            if remaining_miles > 0.5 and self._drive_hours_available() < 0.1:
-                rest_loc = mid_name
-                self._finalize_day(rest_loc)
-                self._take_rest(rest_loc)
+            if dest_type == "pickup" and not pickup_na:
+                self.instructions.append(f"Arrive pickup: {pickup['name']} — 1h on-duty (loading)")
+                self._add_segment(
+                    DutyStatus.ON_DUTY,
+                    PICKUP_DROP_HOURS,
+                    pickup["name"],
+                    f"On duty at pickup — {pickup['name']}",
+                )
+                self.stops.append(
+                    TripStop(
+                        pickup["name"],
+                        pickup["lat"],
+                        pickup["lon"],
+                        "pickup",
+                        arrival=self.current_time - timedelta(hours=PICKUP_DROP_HOURS),
+                        departure=self.current_time,
+                    )
+                )
 
-        all_coords.extend(leg.get("coordinates", []))
+            if dest_type == "dropoff" and not dropoff_na:
+                self.instructions.append(f"Arrive dropoff: {dropoff['name']} — 1h on-duty (unloading)")
+                self._add_segment(
+                    DutyStatus.ON_DUTY,
+                    PICKUP_DROP_HOURS,
+                    dropoff["name"],
+                    f"On duty at dropoff — {dropoff['name']}",
+                )
+                self.stops.append(
+                    TripStop(
+                        dropoff["name"],
+                        dropoff["lat"],
+                        dropoff["lon"],
+                        "dropoff",
+                        arrival=self.current_time - timedelta(hours=PICKUP_DROP_HOURS),
+                        departure=self.current_time,
+                    )
+                )
 
-        self.instructions.append(f"Arrive dropoff: {dropoff['name']} — 1h on-duty (unloading)")
-        self._add_segment(DutyStatus.ON_DUTY, PICKUP_DROP_HOURS, dropoff["name"],
-                          f"On duty at dropoff — {dropoff['name']}")
-        self.stops.append(TripStop(dropoff["name"], dropoff["lat"], dropoff["lon"], "dropoff",
-                                   arrival=self.current_time - timedelta(hours=PICKUP_DROP_HOURS),
-                                   departure=self.current_time))
+        if not dropoff_na:
+            final_location = dropoff["name"]
+        elif not pickup_na:
+            final_location = pickup["name"]
+        else:
+            final_location = current["name"]
 
-        self._finalize_day(dropoff["name"])
+        self._finalize_day(final_location)
 
         return TripPlan(
             stops=self.stops,

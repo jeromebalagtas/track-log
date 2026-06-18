@@ -2,43 +2,73 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-const stopColors = {
-  start: '#2563eb',
-  pickup: '#16a34a',
-  dropoff: '#dc2626',
-  fuel: '#ca8a04',
-  rest: '#7c3aed',
+const MARKER_STYLES = {
+  start: { label: 'A', color: '#2563eb', title: 'Current / Start' },
+  pickup: { label: 'P', color: '#16a34a', title: 'Pickup' },
+  dropoff: { label: 'D', color: '#dc2626', title: 'Dropoff' },
+  fuel: { label: 'F', color: '#ca8a04', title: 'Fuel Stop' },
+  rest: { label: 'R', color: '#7c3aed', title: 'Rest' },
 };
 
-function pin(color) {
+function labeledPin(type) {
+  const style = MARKER_STYLES[type] || { label: '•', color: '#64748b', title: type };
   return L.divIcon({
-    className: 'custom-pin',
-    html: `<span style="background:${color};width:14px;height:14px;border-radius:50%;display:block;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></span>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
+    className: 'map-marker-wrap',
+    html: `
+      <div class="map-marker" style="--marker-color:${style.color}" title="${style.title}">
+        <span class="map-marker-label">${style.label}</span>
+        <span class="map-marker-pin"></span>
+      </div>
+    `,
+    iconSize: [32, 42],
+    iconAnchor: [16, 42],
+    popupAnchor: [0, -40],
   });
 }
 
+function locationMarkers(locations) {
+  const items = [];
+  if (locations?.current?.lat != null) {
+    items.push({ key: 'current', loc: locations.current, type: 'start' });
+  }
+  if (locations?.pickup?.lat != null && !locations.pickup.is_na) {
+    items.push({ key: 'pickup', loc: locations.pickup, type: 'pickup' });
+  }
+  if (locations?.dropoff?.lat != null && !locations.dropoff.is_na) {
+    items.push({ key: 'dropoff', loc: locations.dropoff, type: 'dropoff' });
+  }
+  return items;
+}
+
 export default function RouteMap({ plan }) {
-  if (!plan?.locations?.current || !plan?.locations?.dropoff) return null;
+  if (!plan?.locations) return null;
 
   const { locations, route_coordinates: route, stops, legs } = plan;
-  const points = [
-    [locations.current.lat, locations.current.lon],
-    [locations.pickup.lat, locations.pickup.lon],
-    [locations.dropoff.lat, locations.dropoff.lon],
-  ];
+  const markers = locationMarkers(locations);
+
+  if (markers.length === 0) return null;
+
+  const lats = markers.map((m) => m.loc.lat);
+  const lons = markers.map((m) => m.loc.lon);
   const center = [
-    (locations.current.lat + locations.dropoff.lat) / 2,
-    (locations.current.lon + locations.dropoff.lon) / 2,
+    (Math.min(...lats) + Math.max(...lats)) / 2,
+    (Math.min(...lons) + Math.max(...lons)) / 2,
   ];
 
   return (
-    <div className="card map-card">
+    <div className="card map-card" id="route-map-section">
       <h2>Route Map</h2>
       <p className="subtitle">
         {plan.total_miles} mi · {plan.total_days} day(s) · {plan.cycle_hours_remaining}h remaining in 70/8 cycle
       </p>
+
+      <div className="map-legend">
+        <span><i className="legend-dot start" /> A Current</span>
+        <span><i className="legend-dot pickup" /> P Pickup</span>
+        <span><i className="legend-dot dropoff" /> D Dropoff</span>
+        <span><i className="legend-dot fuel" /> F Fuel</span>
+        <span><i className="legend-dot rest" /> R Rest</span>
+      </div>
 
       <div className="leg-summary">
         {legs?.map((leg, i) => (
@@ -53,29 +83,27 @@ export default function RouteMap({ plan }) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {route?.length > 0 && <Polyline positions={route} color="#2563eb" weight={4} opacity={0.85} />}
-        {stops?.map((stop, i) => (
-          <Marker
-            key={i}
-            position={[stop.lat, stop.lon]}
-            icon={pin(stopColors[stop.type] || '#64748b')}
-          >
+        {route?.length > 0 && <Polyline positions={route} color="#38bdf8" weight={5} opacity={0.9} />}
+        {markers.map(({ key, loc, type }) => (
+          <Marker key={key} position={[loc.lat, loc.lon]} icon={labeledPin(type)}>
             <Popup>
-              <strong>{stop.name}</strong>
+              <strong>{MARKER_STYLES[type].title}</strong>
               <br />
-              Type: {stop.type}
-              {stop.arrival && (
-                <>
-                  <br />
-                  Arrival: {new Date(stop.arrival).toLocaleString()}
-                </>
-              )}
+              {loc.full_name || loc.name}
             </Popup>
           </Marker>
         ))}
-        {points.map((p, i) => (
-          <Marker key={`pt-${i}`} position={p} icon={pin('#0f172a')} />
-        ))}
+        {stops
+          ?.filter((s) => s.type === 'fuel' || s.type === 'rest')
+          .map((stop, i) => (
+            <Marker key={`stop-${i}`} position={[stop.lat, stop.lon]} icon={labeledPin(stop.type)}>
+              <Popup>
+                <strong>{MARKER_STYLES[stop.type]?.title || stop.type}</strong>
+                <br />
+                {stop.name}
+              </Popup>
+            </Marker>
+          ))}
       </MapContainer>
     </div>
   );

@@ -14,8 +14,8 @@ from trips.hos_engine import (
 class HOSEngineTests(SimpleTestCase):
     def _fake_legs(self, miles1=200, miles2=200):
         return [
-            {"from": "A", "to": "B", "miles": miles1, "coordinates": []},
-            {"from": "B", "to": "C", "miles": miles2, "coordinates": []},
+            {"from": "A", "to": "B", "miles": miles1, "coordinates": [], "dest": "pickup"},
+            {"from": "B", "to": "C", "miles": miles2, "coordinates": [], "dest": "dropoff"},
         ]
 
     def test_short_trip_single_day(self):

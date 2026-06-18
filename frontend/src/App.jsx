@@ -45,12 +45,12 @@ export default function App() {
 
         <section className="content">
           {plan ? (
-            <>
+            <div id="trip-report" className="trip-report">
               <Suspense fallback={<div className="card">Loading map…</div>}>
                 <RouteMap plan={plan} />
               </Suspense>
               <TripResults plan={plan} />
-            </>
+            </div>
           ) : (
             <div className="empty-state card">
               <h2>Ready to plan</h2>
